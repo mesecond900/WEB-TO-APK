@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DPMods V9 Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root {
+            --bg-body: #000000;
+            --bg-card: #0a140a;
+            --primary: #00ff88; 
+            --primary-dark: #00cc66;
+            --secondary: #00ff88; 
+            --danger: #ff0055;
+            --warning: #ffb700;
+            --text-main: #ffffff;
+            --border: rgba(255, 255, 255, 0.08);
+            --nav-bg: #0a140a;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 110px; /* Space for Nav */
+            overflow-x: hidden;
+        }
+
+        /* --- BACKGROUND PARTICLES --- */
+        #particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { font-family: 'Rajdhani', sans-serif; font-size: 1.4rem; font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+        .status-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 12px #00ff88; transition: 0.3s; }
+        .status-dot.offline { background: var(--danger); box-shadow: 0 0 12px var(--danger); }
+
+        .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+
+        /* --- SEARCH & CHIPS --- */
+        .search-box { position: relative; margin-bottom: 12px; }
+        .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #666; font-size: 1rem; }
+        .search-input { width: 100%; background: rgba(18, 18, 26, 0.8); border: 1px solid #333; padding: 12px 12px 12px 40px; border-radius: 12px; color: white; font-family: 'Poppins', sans-serif; font-size: 0.9rem; transition: 0.3s; backdrop-filter: blur(5px); }
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0, 255, 136, 0.1); }
+
+        .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 15px; scrollbar-width: none; }
+        .chip { padding: 6px 16px; background: #1a1a24; border-radius: 50px; font-size: 0.8rem; color: #888; border: 1px solid #333; white-space: nowrap; transition: 0.3s; font-weight: 500; cursor: pointer; }
+        .chip.active { background: var(--primary); color: #000; border-color: var(--primary); font-weight: 600; box-shadow: 0 0 15px rgba(0, 255, 136, 0.4); }
+
+        /* --- COMPACT CARDS --- */
+        .card { background: rgba(14, 14, 20, 0.7); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 14px; margin-bottom: 10px; position: relative; transition: transform 0.2s; }
+        .card:active { transform: scale(0.98); }
+        
+        .card.active { border-left: 3px solid #00ff88; box-shadow: inset 10px 0 20px -10px rgba(0, 255, 157, 0.1); }
+        .card.waiting { border-left: 3px solid var(--primary); box-shadow: inset 10px 0 20px -10px rgba(0, 255, 136, 0.1); }
+        .card.banned { border-left: 3px solid var(--danger); animation: pulse 2s infinite; }
+        .card.expired { border-left: 3px solid var(--warning); opacity: 0.8; }
+        
+        @keyframes pulse { 0% { box-shadow: inset 2px 0 0 var(--danger); } 50% { box-shadow: inset 2px 0 20px var(--danger); } 100% { box-shadow: inset 2px 0 0 var(--danger); } }
+
+        .user-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .u-name { font-weight: 700; font-size: 1.1rem; font-family: 'Rajdhani', sans-serif; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        
+        .u-dev { font-family: monospace; font-size: 0.75rem; color: #555; margin-bottom: 8px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .u-dev.linked { color: var(--primary); text-shadow: 0 0 5px rgba(0, 255, 136, 0.3); }
+
+        .info-grid { display: flex; gap: 8px; margin-bottom: 10px; }
+        .info-item { flex: 1; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px; font-size: 0.8rem; color: #ccc; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; }
+        .info-item i { font-size: 0.7rem; color: #888; }
+        
+        .actions { display: flex; justify-content: flex-end; gap: 6px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; align-items: center; }
+        
+        /* Smaller Action Buttons */
+        .btn-icon { width: 34px; height: 34px; background: rgba(255,255,255,0.05); border-radius: 10px; color: white; border: none; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+        .btn-icon:hover { background: rgba(255,255,255,0.1); }
+        .btn-copy { color: var(--primary); }
+        .btn-del { color: var(--danger); }
+
+        /* --- SETTINGS INPUTS --- */
+        .inp-group { margin-bottom: 15px; position: relative; }
+        .inp-label { display: block; color: var(--primary); font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .inp { width: 100%; background: #0a0a10; border: 1px solid #333; padding: 14px; color: white; border-radius: 12px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; }
+        .inp:focus { border-color: var(--secondary); }
+
+        /* --- SWITCH --- */
+        .switch { position: relative; width: 38px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #333; border-radius: 34px; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .4s; }
+        input:checked + .slider { background: var(--danger); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* --- CUSTOM CALENDAR CSS (SIDE & CENTERED) --- */
+        .calendar-wrapper { 
+            position: absolute; 
+            top: 0; 
+            left: 105%; /* Push to the RIGHT SIDE by default */
+            z-index: 500; 
+            display: none; 
+            width: 280px;
+        }
+        
+        /* Responsive Calendar for Android/Mobile */
+        @media (max-width: 700px) {
+            .calendar-wrapper {
+                position: fixed; /* Fix to screen center so keyboard can't cut it */
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                width: 300px;
+                box-shadow: 0 0 100px rgba(0,0,0,0.9);
+            }
+        }
+
+        .calendar-wrapper.show { display: block; animation: zoomIn 0.2s; }
+        @keyframes zoomIn { from{opacity:0; transform: scale(0.9) translate(-50%, -50%);} to{opacity:1; transform: scale(1) translate(-50%, -50%);} }
+        /* Reset Animation for Desktop */
+        @media (min-width: 701px) {
+             @keyframes zoomIn { from{opacity:0; transform: translateX(-10px);} to{opacity:1; transform: translateX(0);} }
+        }
+
+        .cal-box { background: #1a1a24; border: 1px solid var(--primary); border-radius: 15px; padding: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: white; }
+        .cal-btn { background: rgba(255,255,255,0.1); border: none; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .cal-btn:hover { background: var(--primary); color: #000; }
+        .cal-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.1rem; }
+        
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-day-name { font-size: 0.75rem; color: #666; font-weight: 600; padding-bottom: 5px; }
+        .cal-day { padding: 8px 0; font-size: 0.9rem; color: #ccc; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .cal-day:hover { background: rgba(0, 255, 136, 0.2); color: white; }
+        .cal-day.active { background: var(--primary); color: #000; font-weight: 700; box-shadow: 0 0 10px rgba(0, 255, 136,0.3); }
+        .cal-day.empty { pointer-events: none; }
+
+        /* --- NAV BAR --- */
+        .nav-bar { 
+            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 
+            background: rgba(22, 22, 33, 0.9); border: 1px solid rgba(255,255,255,0.1); 
+            padding: 0 30px; height: 65px; border-radius: 40px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            width: 85%; max-width: 380px; z-index: 99; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); 
+            backdrop-filter: blur(10px);
+        }
+        .nav-item { color: #555; font-size: 1.4rem; cursor: pointer; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); text-shadow: 0 0 15px var(--primary); }
+        
+        .fab { 
+            width: 55px; height: 55px; 
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.6rem; color: #000; 
+            position: absolute; left: 50%; top: -20px; transform: translateX(-50%); 
+            border: 5px solid var(--bg-body); cursor: pointer; 
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); 
+        }
+        .fab:active { transform: translateX(-50%) scale(0.95); }
+
+        /* --- MODAL --- */
+        .modal-wrap { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        /* IMPORTANT: Overflow visible allows calendar to pop out side */
+        .modal-box { background: #1a1a24; width: 85%; max-width: 340px; padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(0,0,0,0.7); overflow: visible; position: relative; }
+
+        .tool-bar { display: flex; gap: 8px; margin-bottom: 15px; }
+        .btn-tool { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--primary); background: rgba(0, 255, 136, 0.05); color: var(--primary); font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-save { flex: 1; padding: 12px; background: linear-gradient(90deg, var(--secondary), var(--primary)); border: none; font-weight: 700; border-radius: 12px; color: white; cursor: pointer; font-size: 0.9rem; }
+        .btn-cancel { flex: 1; padding: 12px; background: #2a2a35; border: none; font-weight: 600; border-radius: 12px; color: #ccc; cursor: pointer; font-size: 0.9rem; }
+
+        .hidden { display: none !important; }
+        
+        /* --- NOTIFICATIONS --- */
+        .toast { 
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); 
+            background: rgba(16, 16, 24, 0.95); border: 1px solid var(--primary);
+            color: white; padding: 12px 20px; border-radius: 12px; font-size: 0.85rem; 
+            z-index: 300; display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast i { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <canvas id="particles"></canvas>
+
+    <header>
+        <div class="logo" style="flex-direction:column;align-items:flex-start;gap:2px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div id="statusDot" class="status-dot"></div>
+                <span style="background:linear-gradient(90deg,#00ff88,#00cc66,#ffffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:3px;text-shadow:0 0 20px rgba(0,255,136,0.5);">MR SECOND</span>
+            </div>
+            <span style="font-family:'Rajdhani',sans-serif;font-size:0.7rem;letter-spacing:2px;color:#00ff88;text-shadow:0 0 8px rgba(0,255,136,0.6);font-style:italic;">⚡ developer Mr second ⚡</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="loader" style="text-align: center; padding: 80px 0;">
+            <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+            <p style="color: #666; margin-top: 15px; font-size: 0.9rem;">Initializing System...</p>
+        </div>
+
+        <div id="errorMsg" class="hidden" style="background: rgba(255,0,85,0.1); border: 1px solid var(--danger); padding: 20px; border-radius: 16px; text-align: center; color: var(--danger);">
+            <i class="fas fa-wifi" style="font-size: 1.5rem; margin-bottom: 10px;"></i><br><strong>Connection Failed</strong><br>
+            <div style="margin-top:15px; display:flex; gap:10px; justify-content:center;">
+                <button onclick="resetUrl()" style="background:#444; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Reset</button>
+                <button onclick="window.location.reload()" style="background:var(--danger); color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer;">Retry</button>
+            </div>
+        </div>
+
+        <div id="tabHome" class="hidden">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search" class="search-input" placeholder="Search..." onkeyup="render()">
+            </div>
+
+            <div class="chips">
+                <div class="chip active" onclick="setFilter('all', this)">All</div>
+                <div class="chip" onclick="setFilter('active', this)">Active</div>
+                <div class="chip" onclick="setFilter('valid', this)">Valid</div>
+                <div class="chip" onclick="setFilter('expired', this)">Expired</div>
+                <div class="chip" onclick="setFilter('banned', this)">Banned</div>
+            </div>
+
+            <div id="list"></div>
+        </div>
+
+        <div id="tabSettings" class="hidden">
+            <h2 style="color:white; margin-bottom:15px; font-size:1.2rem;">Configuration</h2>
+            <div class="card" style="border:1px solid #333;">
+                
+                <div class="inp-group">
+                    <label class="inp-label">Firebase URL</label>
+                    <input type="text" class="inp" id="confUrl">
+                </div>
+
+                <div class="inp-group">
+                    <label class="inp-label">Admin Contact URL</label>
+                    <input type="text" class="inp" id="confAdmin">
+                </div>
+
+                <div class="inp-group">
+                    <label class="inp-label">Dialog Timeout</label>
+                    <input type="text" class="inp" id="confTime">
+                </div>
+
+                <div class="inp-group">
+                    <label class="inp-label">Announcement</label>
+                    <textarea class="inp" id="confMsg" rows="2"></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:#111; padding:10px; border-radius:10px;">
+                    <span style="color:#aaa; font-size:0.8rem;">Show Announcement</span>
+                    <label class="switch">
+                        <input type="checkbox" id="confShow">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <button class="btn-save" onclick="saveSettings()">Save Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal-wrap">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3 style="margin:0; font-family:'Rajdhani', sans-serif; color:white;">User Details</h3>
+                <i class="fas fa-times" onclick="closeModal()" style="color:#666; cursor:pointer;"></i>
+            </div>
+            
+            <input type="hidden" id="editIdx">
+            <div class="tool-bar">
+                <button class="btn-tool" onclick="randomGen()"><i class="fas fa-dice"></i> Random</button>
+                <button class="btn-tool" onclick="makeSame()"><i class="fas fa-clone"></i> Same</button>
+            </div>
+
+            <div class="inp-group"><label class="inp-label">Username</label><input type="text" class="inp" id="uName"></div>
+            <div class="inp-group"><label class="inp-label">Password</label><input type="text" class="inp" id="uPass"></div>
+            <div class="inp-group"><label class="inp-label">Device ID</label><input type="text" class="inp" id="uDev" placeholder="Optional"></div>
+            
+            <div class="inp-group">
+                <label class="inp-label">Expiry</label>
+                <div style="position:relative;">
+                    <input type="text" class="inp" id="uExp" placeholder="DD/MM/YYYY" readonly onclick="toggleCalendar()">
+                    <i class="far fa-calendar-alt" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:#666; pointer-events:none;"></i>
+                    
+                    <div id="calendar" class="calendar-wrapper">
+                        <div class="cal-box">
+                            <div class="cal-header">
+                                <button class="cal-btn" onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+                                <div class="cal-title" id="calMonthYear">Oct 2023</div>
+                                <button class="cal-btn" onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div class="cal-grid">
+                                <div class="cal-day-name">Sun</div><div class="cal-day-name">Mon</div><div class="cal-day-name">Tue</div>
+                                <div class="cal-day-name">Wed</div><div class="cal-day-name">Thu</div><div class="cal-day-name">Fri</div>
+                                <div class="cal-day-name">Sat</div>
+                            </div>
+                            <div class="cal-grid" id="calDays"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-save" onclick="saveUser()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <i class="fas fa-bell"></i>
+        <span id="toastMsg">Notification</span>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" id="navHome" onclick="switchTab('home')"><i class="fas fa-home"></i></div>
+        <div class="fab" onclick="openModal()"><i class="fas fa-plus"></i></div>
+        <div class="nav-item" id="navSet" onclick="switchTab('settings')"><i class="fas fa-cog"></i></div>
+    </div>
+
+    <script>
+        // --- 1. CONFIG & DEFAULTS ---
+        const DEFAULT_URL = "https://grab-a8110-default-rtdb.firebaseio.com/.json";
+        
+        const DEFAULT_DB_DATA = {
+            "AdminUrl": "https://grab-a8110-default-rtdb.firebaseio.com",
+            "DialogTimeout": "1m",
+            "ShowAnnouncement": true,
+            "Announcement": "New Update V2.0 is coming soon! Stay tuned.",
+            "Users": [],
+            "BannedDevices": []
+        };
+
+        let dbUrl = DEFAULT_URL; localStorage.setItem("dbUrl", DEFAULT_URL);
+        let localData = { users: [], banned: [] };
+        let prevUserMap = {}; 
+        let isFirstLoad = true;
+        let currentFilter = 'all';
+
+        // --- 2. FETCH LOGIC ---
+        async function fetchData() {
+            if(isFirstLoad) {
+                document.getElementById('loader').style.display = 'block';
+                document.getElementById('tabHome').classList.add('hidden');
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+            try {
+                const response = await fetch(dbUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+                
+                const data = await response.json();
+                
+                if(data === null) { await uploadDefaults(); return; }
+
+                processData(data);
+                
+                document.getElementById('loader').style.display = 'none';
+                if(document.getElementById('navHome').classList.contains('active')){
+                    document.getElementById('tabHome').classList.remove('hidden');
+                }
+                document.getElementById('statusDot').classList.remove('offline');
+                isFirstLoad = false;
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('errorMsg').classList.remove('hidden');
+                document.getElementById('statusDot').classList.add('offline');
+            }
+        }
+
+        async function uploadDefaults() {
+            try {
+                await fetch(dbUrl, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(DEFAULT_DB_DATA)
+                });
+                fetchData(); 
+            } catch(e) { alert("Init Failed"); }
+        }
+
+        // --- 3. DATA PROCESSING ---
+        function processData(data) {
+            document.getElementById('confUrl').value = dbUrl;
+            document.getElementById('confAdmin').value = data.AdminUrl || "";
+            document.getElementById('confTime').value = data.DialogTimeout || "1m";
+            document.getElementById('confMsg').value = data.Announcement || "";
+            document.getElementById('confShow').checked = data.ShowAnnouncement || false;
+
+            let bans = data.BannedDevices || [];
+            if (typeof bans === 'object' && !Array.isArray(bans)) bans = Object.values(bans);
+            localData.banned = bans.filter(x => x);
+
+            let users = data.Users || [];
+            if (typeof users === 'object' && !Array.isArray(users)) users = Object.values(users);
+            
+            localData.users = users.map(u => ({
+                username: u.Username || u.name || "Unknown",
+                password: u.Password || u.pass || "---",
+                deviceID: u.DeviceID || u.ID || u.id || "",
+                expiry: u.Expiry || u.expiry || ""
+            }));
+
+            if (!isFirstLoad) {
+                localData.users.forEach(u => {
+                    const oldDevID = prevUserMap[u.username];
+                    const newDevID = u.deviceID;
+                    if ((!oldDevID || oldDevID === "") && (newDevID && newDevID.length > 2)) {
+                        showToast(`New Device Linked: ${u.username}`);
+                    }
+                });
+            }
+
+            prevUserMap = {};
+            localData.users.forEach(u => { prevUserMap[u.username] = u.deviceID; });
+
+            render();
+        }
+
+        // --- 4. RENDER UI ---
+        function render() {
+            const list = document.getElementById('list');
+            list.innerHTML = "";
+            const search = document.getElementById('search').value.toLowerCase();
+
+            let sortedUsers = [...localData.users];
+            sortedUsers.sort((a, b) => {
+                const getScore = (u) => {
+                    const isBanned = localData.banned.includes(u.deviceID);
+                    const isExpired = checkExpired(u.expiry);
+                    const hasID = u.deviceID && u.deviceID.length > 2;
+                    if (isBanned) return 4;
+                    if (!isExpired && hasID) return 3;
+                    if (!isExpired && !hasID) return 2;
+                    return 1;
+                };
+                return getScore(b) - getScore(a);
+            });
+
+            sortedUsers.forEach((u) => {
+                const realIdx = localData.users.indexOf(u);
+                
+                const isBanned = localData.banned.includes(u.deviceID);
+                const hasID = u.deviceID && u.deviceID.length > 2;
+                const isExpired = checkExpired(u.expiry);
+                
+                if (search && !u.username.toLowerCase().includes(search)) return;
+                
+                if (currentFilter === 'active' && (!hasID || isExpired || isBanned)) return;
+                if (currentFilter === 'valid' && isExpired) return;
+                if (currentFilter === 'expired' && !isExpired) return;
+                if (currentFilter === 'banned' && !isBanned) return;
+
+                let cardClass = 'waiting'; 
+                let statusTxt = 'WAITING';
+                let statusColor = '#00e5ff';
+                let devText = "No Device Linked";
+                let devClass = '';
+
+                if (hasID) { cardClass = 'active'; statusTxt = 'ACTIVE'; statusColor = '#00ff88'; devText = u.deviceID; devClass = 'linked'; }
+                if (isExpired) { cardClass = 'expired'; statusTxt = 'EXPIRED'; statusColor = '#ffb700'; }
+                if (isBanned) { cardClass = 'banned'; statusTxt = 'BANNED'; statusColor = '#ff0055'; } 
+
+                const html = `
+                <div class="card ${cardClass}">
+                    <div class="user-head">
+                        <div class="u-name">${u.username}</div>
+                        <label class="switch">
+                            <input type="checkbox" ${isBanned ? 'checked' : ''} onchange="toggleBan('${u.deviceID}')">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <span class="u-dev ${devClass}">${devText}</span>
+                    <div class="info-grid">
+                        <div class="info-item"><i class="fas fa-key"></i> ${u.password}</div>
+                        <div class="info-item"><i class="far fa-clock"></i> ${u.expiry}</div>
+                    </div>
+                    <div class="actions">
+                        <span style="color:${statusColor}; font-weight:bold; font-size:0.75rem; margin-right:auto;">${statusTxt}</span>
+                        <button class="btn-icon btn-copy" onclick="copyCreds('${u.username}', '${u.password}')"><i class="fas fa-copy"></i></button>
+                        <button class="btn-icon" onclick="openModal('${u.username}')"><i class="fas fa-pen"></i></button>
+                        <button class="btn-icon btn-del" onclick="delUser(${realIdx})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+                list.innerHTML += html;
+            });
+            if (list.innerHTML === "") list.innerHTML = "<div style='text-align:center; color:#555; margin-top:50px; font-size:0.9rem;'>No Users Found</div>";
+        }
+
+        // --- 5. ACTIONS ---
+        async function saveData() {
+            const payload = {
+                AdminUrl: document.getElementById('confAdmin').value,
+                DialogTimeout: document.getElementById('confTime').value,
+                Announcement: document.getElementById('confMsg').value,
+                ShowAnnouncement: document.getElementById('confShow').checked,
+                BannedDevices: localData.banned,
+                Users: localData.users.map(u => ({
+                    Username: u.username, Password: u.password,
+                    DeviceID: u.deviceID, ID: u.deviceID, Expiry: u.expiry
+                }))
+            };
+
+            try {
+                await fetch(dbUrl, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                fetchData();
+            } catch (e) { showToast("Save Failed"); }
+        }
+
+        function toggleBan(id) {
+            if(!id || id.length < 3) return alert("User has no Device ID.");
+            const idx = localData.banned.indexOf(id);
+            if(idx > -1) localData.banned.splice(idx, 1);
+            else localData.banned.push(id);
+            saveData();
+        }
+
+        function delUser(idx) {
+            if(confirm("Delete User?")) {
+                localData.users.splice(idx, 1);
+                saveData();
+            }
+        }
+
+        // --- CALENDAR LOGIC ---
+        let currDate = new Date();
+        let currMonth = currDate.getMonth();
+        let currYear = currDate.getFullYear();
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        function toggleCalendar() {
+            const cal = document.getElementById('calendar');
+            if(cal.style.display === 'block') {
+                cal.style.display = 'none';
+                cal.classList.remove('show');
+            } else {
+                cal.style.display = 'block';
+                cal.classList.add('show');
+                renderCalendar();
+            }
+        }
+
+        function renderCalendar() {
+            const firstDay = new Date(currYear, currMonth, 1).getDay();
+            const lastDate = new Date(currYear, currMonth + 1, 0).getDate();
+            const calDays = document.getElementById('calDays');
+            document.getElementById('calMonthYear').innerText = `${months[currMonth]} ${currYear}`;
+            
+            calDays.innerHTML = "";
+            
+            // Empty slots for prev month
+            for(let i=0; i<firstDay; i++) {
+                calDays.innerHTML += `<div class="cal-day empty"></div>`;
+            }
+            
+            // Days
+            for(let i=1; i<=lastDate; i++) {
+                const isToday = i === new Date().getDate() && currMonth === new Date().getMonth() && currYear === new Date().getFullYear();
+                calDays.innerHTML += `<div class="cal-day ${isToday ? 'active' : ''}" onclick="selectDate(${i})">${i}</div>`;
+            }
+        }
+
+        function changeMonth(d) {
+            currMonth += d;
+            if(currMonth < 0) { currMonth = 11; currYear--; }
+            if(currMonth > 11) { currMonth = 0; currYear++; }
+            renderCalendar();
+        }
+
+        function selectDate(day) {
+            const d = String(day).padStart(2,'0');
+            const m = String(currMonth + 1).padStart(2,'0');
+            const y = currYear;
+            document.getElementById('uExp').value = `${d}/${m}/${y}`;
+            toggleCalendar(); // Close
+        }
+
+        // Close calendar if clicking outside
+        window.addEventListener('click', function(e){
+            const cal = document.getElementById('calendar');
+            const inp = document.getElementById('uExp');
+            if(!cal.contains(e.target) && e.target !== inp) {
+                cal.style.display = 'none';
+            }
+        });
+
+        // --- MODAL FUNCTIONS ---
+        window.openModal = function(username = null) {
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('calendar').style.display = 'none'; // Ensure cal is closed
+            document.getElementById('editIdx').value = "";
+            document.getElementById('uName').value = "";
+            document.getElementById('uPass').value = "";
+            document.getElementById('uDev').value = "";
+            document.getElementById('uExp').value = "";
+
+            if(username !== null && typeof username === 'string') {
+                const u = localData.users.find(user => user.username === username);
+                if(u) {
+                    const realIndex = localData.users.indexOf(u);
+                    document.getElementById('editIdx').value = realIndex;
+                    document.getElementById('uName').value = u.username;
+                    document.getElementById('uPass').value = u.password;
+                    document.getElementById('uDev').value = u.deviceID;
+                    document.getElementById('uExp').value = u.expiry; 
+                }
+            } else {
+                document.getElementById('editIdx').value = "NEW";
+            }
+        }
+
+        window.saveUser = function() {
+            const idx = document.getElementById('editIdx').value;
+            const u = {
+                username: document.getElementById('uName').value,
+                password: document.getElementById('uPass').value,
+                deviceID: document.getElementById('uDev').value,
+                expiry: document.getElementById('uExp').value
+            };
+
+            if(!u.username) return alert("Username Required");
+            if(!u.expiry) {
+                 const d = new Date(); d.setDate(d.getDate() + 30);
+                 const day = String(d.getDate()).padStart(2,'0');
+                 const mo = String(d.getMonth()+1).padStart(2,'0');
+                 u.expiry = `${day}/${mo}/${d.getFullYear()}`;
+            }
+
+            if(idx !== "NEW" && idx !== "") localData.users[idx] = u;
+            else localData.users.push(u);
+
+            document.getElementById('modal').style.display = 'none';
+            saveData();
+        }
+        
+        function saveSettings() {
+            const newUrl = document.getElementById('confUrl').value;
+            if(newUrl) { dbUrl = newUrl; localStorage.setItem("dbUrl", newUrl); }
+            saveData();
+            showToast("Configuration Saved");
+        }
+
+        // --- 6. UTILS ---
+        function randomGen() {
+            const rnd = Math.random().toString(36).substring(2, 8).toUpperCase();
+            document.getElementById('uName').value = rnd;
+            document.getElementById('uPass').value = rnd;
+        }
+        function makeSame() { document.getElementById('uPass').value = document.getElementById('uName').value; }
+        
+        function copyCreds(u, p) {
+            navigator.clipboard.writeText(`${u}:${p}`).then(() => { showToast("Copied to Clipboard"); });
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function checkExpired(dateStr) {
+            if(!dateStr) return false;
+            const parts = dateStr.split('/');
+            if(parts.length === 3) {
+                 const d = parseInt(parts[0], 10);
+                 const m = parseInt(parts[1], 10) - 1;
+                 const y = parseInt(parts[2], 10);
+                 const expDate = new Date(y, m, d);
+                 expDate.setHours(23, 59, 59);
+                 return expDate < new Date();
+            }
+            return false;
+        }
+
+        function resetUrl() { localStorage.removeItem("dbUrl"); window.location.reload(); }
+        function formatDate(dateStr) { return dateStr; }
+        function setFilter(f, el) {
+            currentFilter = f;
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            render();
+        }
+
+        function switchTab(t) {
+            const home = document.getElementById('tabHome');
+            const sett = document.getElementById('tabSettings');
+            const navH = document.getElementById('navHome');
+            const navS = document.getElementById('navSet');
+
+            if(t === 'home') { 
+                home.classList.remove('hidden'); sett.classList.add('hidden'); 
+                navH.classList.add('active'); navS.classList.remove('active');
+            } else { 
+                home.classList.add('hidden'); sett.classList.remove('hidden'); 
+                navH.classList.remove('active'); navS.classList.add('active');
+            }
+        }
+        
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+        // --- PARTICLE ANIMATION ---
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.color = `rgba(0, 255, 136, ${Math.random() * 0.5})`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+        // INIT
+        fetchData();
+        setInterval(() => { if(document.getElementById('modal').style.display === 'none') fetchData(); }, 5000);
+    </script>
+</body>
+</html>
